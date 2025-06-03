@@ -13,6 +13,8 @@ import 'package:subscription_manager/features/home/presentation/screens/home_scr
 
 const String kSubscriptionsBoxName = 'subscriptions_box';
 const String kCategoriesBoxName = 'categories_box';
+const String kAppInitBoxName = 'app_init';
+const String kInitKey = 'initialized';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,8 +28,8 @@ Future<void> main() async {
     kSubscriptionsBoxName,
   );
   final categoryBox = await Hive.openBox<String>(kCategoriesBoxName);
+  final appInitBox = await Hive.openBox(kAppInitBoxName);
 
-  // Initialize the static subscription datasource
   final staticSubscriptionDatasource = StaticSubscriptionDatasource();
 
   final SubscriptionRepository subscriptionRepository =
@@ -36,6 +38,12 @@ Future<void> main() async {
         categoryBox: categoryBox,
         staticSubscriptionDatasource: staticSubscriptionDatasource,
       );
+
+  // Initialize default data only on first app launch
+  if (!appInitBox.get(kInitKey, defaultValue: false)) {
+    await subscriptionRepository.initializeDefaultData();
+    await appInitBox.put(kInitKey, true);
+  }
 
   runApp(MyApp(subscriptionRepository: subscriptionRepository));
 }
