@@ -17,6 +17,14 @@ class _AddCategoryBottomSheetState extends State<AddCategoryBottomSheet> {
   final Set<String> _selectedSubscriptionIds = {};
 
   @override
+  void initState() {
+    super.initState();
+    _categoryNameController.addListener(() {
+      setState(() {});
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final bottomPadding = MediaQuery.of(context).viewInsets.bottom;
@@ -140,10 +148,11 @@ class _AddCategoryBottomSheetState extends State<AddCategoryBottomSheet> {
                       ),
                     const SizedBox(height: 20),
                     PrimaryButton(
-                      onPressed: _categoryNameController.text.trim().isEmpty
+                      onPressed:
+                          _categoryNameController.text.trim().isEmpty ||
+                              _selectedSubscriptionIds.isEmpty
                           ? null
                           : () => _handleAddCategory(context, allSubscriptions),
-
                       text: 'Save',
                     ),
                   ],
@@ -158,7 +167,6 @@ class _AddCategoryBottomSheetState extends State<AddCategoryBottomSheet> {
 
   Future<List<Subscription>> _getAllSubscriptions(BuildContext context) async {
     final bloc = context.read<SubscriptionBloc>();
-    // Access the repository directly to get ALL subscriptions
     return await bloc.subscriptionRepository.getSubscriptions();
   }
 
@@ -168,7 +176,6 @@ class _AddCategoryBottomSheetState extends State<AddCategoryBottomSheet> {
   ) {
     final categoryName = _categoryNameController.text.trim();
     if (categoryName.isNotEmpty) {
-      // Add the new category with selected subscription IDs
       context.read<SubscriptionBloc>().add(
         AddCategory(categoryName, _selectedSubscriptionIds.toList()),
       );
