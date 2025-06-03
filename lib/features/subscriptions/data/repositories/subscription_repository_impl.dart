@@ -2,32 +2,28 @@ import 'package:hive/hive.dart';
 import 'package:subscription_manager/features/subscriptions/data/datasources/static_subscription_datasource.dart';
 import 'package:subscription_manager/features/subscriptions/domain/entities/subscription_entity.dart';
 import 'package:subscription_manager/features/subscriptions/domain/repositories/subscription_repository.dart';
-import 'package:uuid/uuid.dart'; // Import Uuid
 
 class SubscriptionRepositoryImpl implements SubscriptionRepository {
   final Box<Subscription> subscriptionBox;
   final Box<String> categoryBox;
   final StaticSubscriptionDatasource staticSubscriptionDatasource;
-  final Uuid _uuid; // Add Uuid instance
 
   SubscriptionRepositoryImpl({
     required this.subscriptionBox,
     required this.categoryBox,
     required this.staticSubscriptionDatasource,
-  }) : _uuid = const Uuid(); // Initialize Uuid
+  });
 
   @override
   Future<void> addSubscription(Subscription subscription) async {
-    // Generate a new unique ID for the subscription before saving
-    final newId = _uuid.v4();
-    // Ensure the subscription is added to "All Subs" category by default
-    final newSubscriptionWithId = subscription.copyWith(
-      id: newId,
-      category: subscription.category.isEmpty
-          ? 'All Subs'
-          : subscription.category,
-    );
-    await subscriptionBox.put(newId, newSubscriptionWithId);
+    // For new user subscriptions, generate a unique ID if none exists
+    final subscriptionToAdd = subscription.id.isEmpty
+        ? subscription.copyWith(
+            id: DateTime.now().millisecondsSinceEpoch.toString(),
+          )
+        : subscription;
+
+    await subscriptionBox.put(subscriptionToAdd.id, subscriptionToAdd);
   }
 
   @override
@@ -41,7 +37,7 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
       return subscriptionBox.values.toList();
     }
     return subscriptionBox.values
-        .where((sub) => sub.category == category)
+        .where((sub) => sub.categories.contains(category))
         .toList();
   }
 
@@ -64,14 +60,6 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
 
   @override
   Future<List<String>> getCategories() async {
-    if (categoryBox.isEmpty) {
-      final defaultCategories = ['All Subs'];
-      for (var category in defaultCategories) {
-        if (!categoryBox.containsKey(category)) {
-          await categoryBox.put(category, category);
-        }
-      }
-    }
     return categoryBox.values.toList();
   }
 
@@ -86,15 +74,57 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   Future<void> deleteCategory(String category) async {
     await categoryBox.delete(category);
     final subscriptionsToUpdate = subscriptionBox.values.where(
-      (s) => s.category == category,
+      (s) => s.categories.contains(category),
     );
     for (var sub in subscriptionsToUpdate) {
-      await updateSubscription(sub.copyWith(category: 'Uncategorized'));
+      final newCategories = sub.categories
+          .where((cat) => cat != category)
+          .toList();
+      if (newCategories.isEmpty) {
+        newCategories.add('All Subs');
+      }
+      await updateSubscription(sub.copyWith(categories: newCategories));
+    }
+  }
+
+  @override
+  Future<void> addCategoryToSubscription(
+    String subscriptionId,
+    String category,
+  ) async {
+    final subscription = subscriptionBox.get(subscriptionId);
+    if (subscription != null) {
+      final newCategories = Set<String>.from(subscription.categories);
+      newCategories.add(category);
+      await updateSubscription(
+        subscription.copyWith(categories: newCategories.toList()),
+      );
     }
   }
 
   @override
   List<Subscription> getAvailableSubscriptionTemplates() {
     return staticSubscriptionDatasource.getAvailableSubscriptions();
+  }
+
+  @override
+  Future<void> initializeDefaultData() async {
+    // This method is called only on first app launch
+    // Clear any existing data (in case of corrupted state)
+    await subscriptionBox.clear();
+    await categoryBox.clear();
+
+    // Add default categories
+    const defaultCategories = ['All Subs', 'Entertainment'];
+    for (var category in defaultCategories) {
+      await addCategory(category);
+    }
+
+    // Add static subscriptions to database
+    final staticSubscriptions = staticSubscriptionDatasource
+        .getAvailableSubscriptions();
+    for (var subscription in staticSubscriptions) {
+      await subscriptionBox.put(subscription.id, subscription);
+    }
   }
 }

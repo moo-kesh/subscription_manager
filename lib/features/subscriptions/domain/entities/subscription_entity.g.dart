@@ -23,7 +23,7 @@ class SubscriptionAdapter extends TypeAdapter<Subscription> {
       billingCycle: fields[3] as BillingCycle,
       iconAssetPath: fields[4] as String,
       cardColorHex: fields[5] as String,
-      category: fields[6] as String,
+      categories: (fields[6] as List).cast<String>(),
     );
   }
 
@@ -44,7 +44,7 @@ class SubscriptionAdapter extends TypeAdapter<Subscription> {
       ..writeByte(5)
       ..write(obj.cardColorHex)
       ..writeByte(6)
-      ..write(obj.category);
+      ..write(obj.categories);
   }
 
   @override

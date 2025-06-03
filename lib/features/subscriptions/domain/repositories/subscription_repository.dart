@@ -10,5 +10,10 @@ abstract class SubscriptionRepository {
   Future<List<String>> getCategories();
   Future<void> addCategory(String category);
   Future<void> deleteCategory(String category);
+  Future<void> addCategoryToSubscription(
+    String subscriptionId,
+    String category,
+  );
   List<Subscription> getAvailableSubscriptionTemplates();
+  Future<void> initializeDefaultData();
 }

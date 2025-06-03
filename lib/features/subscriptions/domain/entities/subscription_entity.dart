@@ -30,7 +30,7 @@ class Subscription extends Equatable {
   @HiveField(5)
   final String cardColorHex;
   @HiveField(6)
-  final String category;
+  final List<String> categories;
 
   const Subscription({
     required this.id,
@@ -39,7 +39,7 @@ class Subscription extends Equatable {
     required this.billingCycle,
     required this.iconAssetPath,
     required this.cardColorHex,
-    required this.category,
+    required this.categories,
   });
 
   @override
@@ -50,7 +50,7 @@ class Subscription extends Equatable {
     billingCycle,
     iconAssetPath,
     cardColorHex,
-    category,
+    categories,
   ];
 
   Subscription copyWith({
@@ -61,7 +61,7 @@ class Subscription extends Equatable {
     DateTime? startDate,
     String? iconAssetPath,
     String? cardColorHex,
-    String? category,
+    List<String>? categories,
   }) {
     return Subscription(
       id: id ?? this.id,
@@ -70,7 +70,7 @@ class Subscription extends Equatable {
       billingCycle: billingCycle ?? this.billingCycle,
       iconAssetPath: iconAssetPath ?? this.iconAssetPath,
       cardColorHex: cardColorHex ?? this.cardColorHex,
-      category: category ?? this.category,
+      categories: categories ?? this.categories,
     );
   }
 }
