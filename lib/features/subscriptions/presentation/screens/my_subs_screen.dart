@@ -104,58 +104,92 @@ class _MySubsScreenState extends State<MySubsScreen> {
     int oldLength,
     int newLength,
   ) {
+    // First, handle removals
     if (newLength < oldLength) {
-      // Items were removed - find which ones and animate them out
-      final itemsToRemove = oldLength - newLength;
-      for (int i = 0; i < itemsToRemove; i++) {
-        final indexToRemove = oldLength - 1 - i;
-        if (indexToRemove < _currentFilteredSubscriptions.length) {
-          final removedItem = _currentFilteredSubscriptions[indexToRemove];
-          _currentFilteredSubscriptions.removeAt(indexToRemove);
+      // Find items that were removed
+      final List<int> indicesToRemove = [];
+      for (int i = 0; i < _currentFilteredSubscriptions.length; i++) {
+        final currentItem = _currentFilteredSubscriptions[i];
+        if (!newFilteredSubscriptions.any(
+          (item) => item.id == currentItem.id,
+        )) {
+          indicesToRemove.add(i);
+        }
+      }
 
-          _listKey.currentState?.removeItem(
-            indexToRemove + 1, // +1 for Add subscription card
-            (context, animation) => SlideTransition(
-              position: animation.drive(
-                Tween<Offset>(
-                  begin: Offset.zero,
-                  end: const Offset(-1.0, 0.0), // Slide to left
-                ),
-              ),
-              child: _buildSubscriptionCard(
-                context,
-                removedItem,
-                Theme.of(context).textTheme,
-                indexToRemove * 80.0,
+      // Remove items in reverse order to avoid index shifting issues
+      for (int i = indicesToRemove.length - 1; i >= 0; i--) {
+        final indexToRemove = indicesToRemove[i];
+        final removedItem = _currentFilteredSubscriptions[indexToRemove];
+        _currentFilteredSubscriptions.removeAt(indexToRemove);
+
+        _listKey.currentState?.removeItem(
+          indexToRemove + 1, // +1 for Add subscription card
+          (context, animation) => SlideTransition(
+            position: animation.drive(
+              Tween<Offset>(
+                begin: Offset.zero,
+                end: const Offset(-1.0, 0.0), // Slide to left
               ),
             ),
-            duration: const Duration(milliseconds: 300),
-          );
-        }
+            child: _buildSubscriptionCard(
+              context,
+              removedItem,
+              Theme.of(context).textTheme,
+              indexToRemove * 80.0,
+            ),
+          ),
+          duration: const Duration(milliseconds: 300),
+        );
       }
-    } else if (newLength > oldLength) {
-      // Items were added - animate them in
-      final itemsToAdd = newLength - oldLength;
-      for (int i = 0; i < itemsToAdd; i++) {
-        final indexToAdd = oldLength + i;
-        if (indexToAdd < newFilteredSubscriptions.length) {
-          _currentFilteredSubscriptions.add(
-            newFilteredSubscriptions[indexToAdd],
-          );
+    }
+
+    // Then handle additions
+    if (newLength > _currentFilteredSubscriptions.length) {
+      // Find items that were added
+      for (int i = 0; i < newFilteredSubscriptions.length; i++) {
+        final newItem = newFilteredSubscriptions[i];
+        final existingIndex = _currentFilteredSubscriptions.indexWhere(
+          (item) => item.id == newItem.id,
+        );
+
+        if (existingIndex == -1) {
+          // This is a new item, insert it at the right position
+          _currentFilteredSubscriptions.insert(i, newItem);
 
           _listKey.currentState?.insertItem(
-            indexToAdd + 1, // +1 for Add subscription card
+            i + 1, // +1 for Add subscription card
             duration: const Duration(milliseconds: 300),
           );
+        } else if (existingIndex != i) {
+          // Item exists but needs to be reordered
+          final movedItem = _currentFilteredSubscriptions.removeAt(
+            existingIndex,
+          );
+          _currentFilteredSubscriptions.insert(i, movedItem);
+          // Note: Reordering would need more complex animation handling
         }
       }
     }
 
-    // Ensure the list is properly synchronized
-    if (_currentFilteredSubscriptions.length !=
-        newFilteredSubscriptions.length) {
+    // Ensure the list is properly synchronized with exact order and content
+    if (!_areListsIdentical(
+      _currentFilteredSubscriptions,
+      newFilteredSubscriptions,
+    )) {
       _currentFilteredSubscriptions = List.from(newFilteredSubscriptions);
     }
+  }
+
+  // Helper method to check if lists have identical items in the same order
+  bool _areListsIdentical(List<Subscription> list1, List<Subscription> list2) {
+    if (list1.length != list2.length) return false;
+
+    for (int i = 0; i < list1.length; i++) {
+      if (list1[i].id != list2[i].id) return false;
+    }
+
+    return true;
   }
 
   @override

@@ -1,5 +1,5 @@
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:subscription_manager/features/subscriptions/domain/entities/subscription_entity.dart';
 import 'package:subscription_manager/features/subscriptions/domain/repositories/subscription_repository.dart';
 
@@ -83,11 +83,6 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           (currentFilter == null || !categories.contains(currentFilter))) {
         currentFilter = categories.first;
       }
-      emit(
-        SubscriptionOperationSuccess(
-          message: 'Subscription added successfully',
-        ),
-      );
       emit(
         SubscriptionsLoaded(
           subscriptions: subscriptions,
