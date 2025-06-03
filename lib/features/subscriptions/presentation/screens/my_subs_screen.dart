@@ -226,7 +226,8 @@ class _MySubsScreenState extends State<MySubsScreen> {
                 ? state.subscriptions
                 : state.subscriptions
                       .where(
-                        (sub) => sub.category == state.activeCategoryFilter,
+                        (sub) =>
+                            sub.categories.contains(state.activeCategoryFilter),
                       )
                       .toList();
 
@@ -370,7 +371,11 @@ class _MySubsScreenState extends State<MySubsScreen> {
                 ),
                 GestureDetector(
                   onTap: () {
-                    _showAddSubscriptionBottomSheet(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Coming soon!')),
+                    );
+                    //_showAddSubscriptionBottomSheet(context);
+                    // Disable the add subscription button for now
                   },
                   child: DecoratedBox(
                     decoration: BoxDecoration(

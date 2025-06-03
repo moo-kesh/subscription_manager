@@ -24,7 +24,12 @@ class _AddSubscriptionBottomSheetState
   Set<Subscription> _getAddedSubscriptionNames(SubscriptionState state) {
     if (state is SubscriptionsLoaded) {
       return state.subscriptions
-          .where((sub) => state.activeCategoryFilter == sub.category)
+          .where(
+            (sub) =>
+                state.activeCategoryFilter == null ||
+                state.activeCategoryFilter == 'All Subs' ||
+                sub.categories.contains(state.activeCategoryFilter),
+          )
           .toSet();
     }
     return {};
@@ -131,13 +136,13 @@ class _AddSubscriptionBottomSheetState
                                   RemoveSubscription(subscriptionToRemove.id),
                                 );
                               } else {
-                                // Add the subscription with current date
                                 context.read<SubscriptionBloc>().add(
                                   AddSubscription(
                                     subTemplate.copyWith(
-                                      category:
-                                          state.activeCategoryFilter ??
-                                          'All Subs',
+                                      categories: [
+                                        state.activeCategoryFilter ??
+                                            'All Subs',
+                                      ],
                                     ),
                                   ),
                                 );
