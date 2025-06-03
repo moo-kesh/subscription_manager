@@ -34,7 +34,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
           subscriptions: subscriptions,
           categories: categories,
           availableSubscriptions: availableSubscriptions,
-          activeCategoryFilter: categories.isNotEmpty ? categories.first : null,
+          activeCategoryFilter: categories.isNotEmpty ? categories.first : 'All Subs',
         ),
       );
     } catch (e) {
@@ -133,15 +133,7 @@ class SubscriptionBloc extends Bloc<SubscriptionEvent, SubscriptionState> {
     try {
       await subscriptionRepository.addCategory(event.categoryName);
       for (String subId in event.subscriptionIds) {
-        final List<Subscription> currentSubscriptions =
-            await subscriptionRepository.getSubscriptions();
-        final subToUpdate = currentSubscriptions.firstWhere(
-          (s) => s.id == subId,
-          orElse: () => throw Exception('Subscription not found'),
-        );
-        await subscriptionRepository.updateSubscription(
-          subToUpdate.copyWith(category: event.categoryName),
-        );
+        await subscriptionRepository.addCategoryToSubscription(subId, event.categoryName);
       }
       final subscriptions = await subscriptionRepository.getSubscriptions();
       final categories = await subscriptionRepository.getCategories();
